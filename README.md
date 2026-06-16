@@ -40,6 +40,9 @@ AI_bias/
 |   `-- crows_pairs_anonymized.csv # Download separately if absent
 |-- notebooks/                     # Exploratory analysis
 |   `-- qualitative_analysis.ipynb
+|-- scripts/                       # Reproduction and paper-figure scripts
+|-- tests/                         # Lightweight pipeline tests
+|-- docs/                          # Methodology, data, metric, and reproducibility notes
 |-- examples/                      # Key figures and result tables from paper
 |   |-- plots/                     # Main visualizations
 |   `-- results/                   # Summary CSVs and metrics JSON
@@ -49,11 +52,14 @@ AI_bias/
 |   `-- tables/                    # Summary statistics tables
 |-- main.py                        # Benchmark entry point and CLI
 |-- requirements.txt
+|-- requirements-dev.txt           # Test/development dependencies
+|-- pyproject.toml                 # Test configuration and package metadata
 |-- .env.example                   # API key template
 `-- .gitignore
 ```
 
 `src/pipeline/` contains the structured execution stages used by `main.py`.
+`examples/` is intentionally reserved for representative paper artifacts; runtime outputs go to `outputs/`.
 
 ## Models
 
@@ -118,6 +124,12 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+For development checks:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
 Create a local `.env` file:
 
 ```bash
@@ -138,7 +150,7 @@ PERSPECTIVE_API_KEY=
 
 ## Running
 
-No-inference smoke test using existing scored results:
+Sanity check without API calls, using existing scored results:
 
 ```bash
 python main.py --reuse-results --provider=openai --model=gpt-4-turbo,gpt-4o --dataset=bbq
@@ -168,6 +180,13 @@ Ablation excluding StereoSet and CrowS-Pairs:
 python main.py --reuse-results --exclude-datasets=stereoset,crows_pairs
 ```
 
+Validate repository structure and imports:
+
+```bash
+python scripts/validate_repo.py
+pytest
+```
+
 ## Pipeline
 
 The benchmark runs these stages:
@@ -181,6 +200,13 @@ The benchmark runs these stages:
 7. Generate plots and tables.
 
 Filtering rates are reported because policy blocks and refusals are part of the evaluation signal.
+
+For more detail, see:
+
+- `docs/PIPELINE.md`
+- `docs/REPRODUCIBILITY.md`
+- `docs/DATASETS.md`
+- `docs/METRICS.md`
 
 ## Outputs
 
