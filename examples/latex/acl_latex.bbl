@@ -1,0 +1,124 @@
+\begin{thebibliography}{20}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Bai et~al.(2022)Bai, Kadavath, Kundu et~al.}]{bai2022constitutional}
+Yuntao Bai, Saurav Kadavath, Sandipan Kundu, and 1 others. 2022.
+\newblock Constitutional {AI}: Harmlessness from {AI} feedback.
+\newblock \emph{arXiv preprint arXiv:2212.08073}.
+
+\bibitem[{Barocas and Selbst(2016)}]{barocas2016bigdata}
+Solon Barocas and Andrew~D. Selbst. 2016.
+\newblock Big data's disparate impact.
+\newblock \emph{California Law Review}, 104(3):671--732.
+
+\bibitem[{Blodgett et~al.(2020)Blodgett, Barocas, Daum{\'e}~III, and
+  Wallach}]{blodgett2020language}
+Su~Lin Blodgett, Solon Barocas, Hal Daum{\'e}~III, and Hanna Wallach. 2020.
+\newblock Language (technology) is power: A critical survey of bias in {NLP}.
+\newblock In \emph{Proceedings of ACL}, pages 5454--5476.
+
+\bibitem[{Blodgett et~al.(2021)Blodgett, Lopez, Olteanu, Sim, and
+  Wallach}]{blodgett2021measuring}
+Su~Lin Blodgett, Gilsinia Lopez, Alexandra Olteanu, Robert Sim, and Hanna
+  Wallach. 2021.
+\newblock On measuring bias in language models.
+\newblock In \emph{Proceedings of ACL}, pages 5018--5033.
+
+\bibitem[{Caliskan et~al.(2017)Caliskan, Bryson, and
+  Narayanan}]{caliskan2017bias}
+Aylin Caliskan, Joanna Bryson, and Arvind Narayanan. 2017.
+\newblock Semantics derived automatically from language corpora contain
+  human-like biases.
+\newblock \emph{Science}, 356(6334):183--186.
+
+\bibitem[{Dhamala et~al.(2021)Dhamala, Sun, Kumar et~al.}]{dhamala2021bold}
+Jwala Dhamala, Tony Sun, Varun Kumar, and 1 others. 2021.
+\newblock {BOLD}: Dataset and metrics for measuring biases in open-ended
+  language generation.
+\newblock In \emph{Proceedings of FAccT}, pages 1--13.
+
+\bibitem[{Efron and Tibshirani(1994)}]{efron1994bootstrap}
+Bradley Efron and Robert~J. Tibshirani. 1994.
+\newblock \href {https://doi.org/10.1201/9780429246593} {\emph{An Introduction
+  to the Bootstrap}}.
+\newblock Chapman and Hall/CRC.
+
+\bibitem[{Ferrara(2024)}]{ferrara2024fairness}
+Emilio Ferrara. 2024.
+\newblock Fairness and bias in artificial intelligence.
+\newblock \emph{ACM Computing Surveys}.
+
+\bibitem[{Garg et~al.(2024)Garg, Perera, Prasad et~al.}]{garg2024identity}
+Sahaj Garg, Piyumi Perera, Anusha Prasad, and 1 others. 2024.
+\newblock Generative language models exhibit social identity biases.
+\newblock \emph{Nature Human Behaviour}, 8(2):1--11.
+
+\bibitem[{Gehman et~al.(2020)Gehman, Ghai, Sap, Choi, and
+  Smith}]{gehman2020realtoxicity}
+Samuel Gehman, Suchin Ghai, Maarten Sap, Yejin Choi, and Noah~A. Smith. 2020.
+\newblock Realtoxicityprompts: Evaluating neural toxic degeneration in language
+  models.
+\newblock In \emph{Findings of EMNLP}, pages 3356--3369.
+
+\bibitem[{Hardt et~al.(2016)Hardt, Price, and Srebro}]{hardt2016equality}
+Moritz Hardt, Eric Price, and Nathan Srebro. 2016.
+\newblock Equality of opportunity in supervised learning.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~29, pages 3315--3323.
+
+\bibitem[{Mehrabi et~al.(2021)Mehrabi, Morstatter, Saxena, Lerman, and
+  Galstyan}]{mehrabi2021survey}
+Ninareh Mehrabi, Fred Morstatter, Nripsuta Saxena, Kristina Lerman, and Aram
+  Galstyan. 2021.
+\newblock A survey on bias and fairness in machine learning.
+\newblock \emph{ACM Computing Surveys}, 54(6):1--35.
+
+\bibitem[{Mitchell et~al.(2019)Mitchell, Wu, Zaldivar
+  et~al.}]{mitchell2019modelcards}
+Margaret Mitchell, Simone Wu, Andrew Zaldivar, and 1 others. 2019.
+\newblock Model cards for model reporting.
+\newblock In \emph{Proceedings of the Conference on Fairness, Accountability,
+  and Transparency}, pages 220--229.
+
+\bibitem[{Nadeem et~al.(2021)Nadeem, Bethke, and Reddy}]{nadeem2021stereoset}
+Moin Nadeem, Anna Bethke, and Siva Reddy. 2021.
+\newblock Stereoset: Measuring stereotypical bias in pretrained language
+  models.
+\newblock In \emph{Proceedings of ACL}, pages 5457--5467.
+
+\bibitem[{Nangia et~al.(2020)Nangia, Vania, Bhalerao, and
+  Bowman}]{nangia2020crows}
+Nikita Nangia, Clara Vania, Rasika Bhalerao, and Samuel Bowman. 2020.
+\newblock Crows-pairs: A challenge dataset for measuring social biases.
+\newblock In \emph{Proceedings of EMNLP}, pages 1953--1967.
+
+\bibitem[{Ouyang et~al.(2022)Ouyang, Wu, Jiang et~al.}]{ouyang2022rlhf}
+Long Ouyang, Jeffrey Wu, Xu~Jiang, and 1 others. 2022.
+\newblock Training language models to follow instructions with human feedback.
+\newblock \emph{Advances in Neural Information Processing Systems},
+  35:27730--27744.
+
+\bibitem[{Parrish et~al.(2022)Parrish, Chen, Nangia et~al.}]{parrish2022bbq}
+Alicia Parrish, Angelica Chen, Nikita Nangia, and 1 others. 2022.
+\newblock {BBQ}: A hand-built bias benchmark for question answering.
+\newblock In \emph{Findings of ACL}, pages 2086--2105.
+
+\bibitem[{Raji et~al.(2020)Raji, Smart, White et~al.}]{raji2020accountability}
+Inioluwa~Deborah Raji, Andrew Smart, Rebecca White, and 1 others. 2020.
+\newblock Closing the {AI} accountability gap.
+\newblock In \emph{Proceedings of the Conference on Fairness, Accountability,
+  and Transparency}, pages 33--44.
+
+\bibitem[{Smith et~al.(2022)Smith, Williamson, and Li}]{smith2022holisticbias}
+Eric~Michael Smith, Mary Williamson, and Meng Li. 2022.
+\newblock Holisticbias: A curated bias benchmark for language models.
+\newblock \emph{arXiv preprint arXiv:2210.13690}.
+
+\bibitem[{Zhao et~al.(2018)Zhao, Wang, Yatskar, Ordonez, and
+  Chang}]{zhao2018winobias}
+Jieyu Zhao, Tianlu Wang, Mark Yatskar, Vicente Ordonez, and Kai-Wei Chang.
+  2018.
+\newblock Gender bias in coreference resolution.
+\newblock In \emph{Proceedings of NAACL-HLT}, pages 15--20.
+
+\end{thebibliography}

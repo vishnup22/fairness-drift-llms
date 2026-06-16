@@ -1,0 +1,394 @@
+\documentclass[11pt]{article}
+\usepackage[review]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage[skip=3pt]{caption}
+\usepackage{dblfloatfix}
+\renewcommand{\floatpagefraction}{0.85}
+\renewcommand{\dblfloatpagefraction}{0.85}
+\definecolor{darkblue}{rgb}{0, 0, 0.5}
+\hypersetup{colorlinks=true, citecolor=darkblue, linkcolor=darkblue, urlcolor=darkblue}
+\setlength{\textfloatsep}{6pt}
+\setlength{\floatsep}{4pt}
+\setlength{\intextsep}{4pt}
+
+\title{Evolving Fairness in Large Language Models: A Longitudinal Multi-Benchmark Study Across Model Families and Versions}
+\author{Anonymous ACL submission}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+LLM developers routinely release new model versions accompanied by claims of safety and fairness improvements, yet systematic longitudinal evidence for these claims remains thin. We present a release-level fairness regression audit framework, a reproducible pipeline for detecting whether a new model version introduces fairness regressions before deployment. Applying this framework to 12 model versions from five providers across six model families and seven public bias benchmarks ($\sim$200K examples), we evaluate fairness along sentiment, toxicity, and stereotype proxy dimensions. Toxicity shows a small average decline across newer releases (mean drift $= {-0.005}$; 95\% CI $[-0.008, 0.002]$), though the aggregate CI includes zero and individual transitions are non-monotonic. Stereotype proxy scores hold steady or increase in 67\% of version transitions; the increase in Gemini-2.5-Pro is statistically significant (Cohen's $d = 0.64$, $p < 0.001$), showing that safety improvements do not necessarily reduce stereotyping. A robustness ablation excluding StereoSet and CrowS-Pairs confirms all main findings on the remaining five benchmarks (8/8 drift conclusions consistent). Weak inter-metric correlations ($|r| < 0.2$) confirm fairness is multidimensional: gains on one dimension do not predict gains elsewhere.
+\end{abstract}
+
+\section{Introduction}
+
+Large language models now run in production across information retrieval, education, healthcare assistance, hiring, and financial decision-making. As they become embedded in institutional processes, concerns about bias and representational harm have moved from academic debate to practical deployment questions.
+
+Major providers ship updated model versions on a regular cadence and often frame these updates as safety and alignment improvements. Those claims, however, are rarely backed by systematic longitudinal evaluation. Most prior bias studies look at a single model version or a small model set at one point in time, which tells us little about how fairness actually changes across product cycles. Evaluators lack the tools to tell whether a newer model is fairer or just differently biased.
+
+We address this gap with a release-level fairness regression audit framework built around the concept of \emph{fairness drift}, meaning the change in a given fairness metric between consecutive model versions. The framework standardizes benchmark processing, prompting, model querying, and metric computation across proprietary and open-weight models, producing a reproducible architecture suitable for continuous monitoring. Our main contributions are:
+\begin{itemize}
+\item A release-level fairness regression audit framework and reproducible pipeline for continuous multi-dimensional fairness monitoring across model versions.
+\item A longitudinal analysis of 12 model versions across seven benchmarks ($\sim$200K examples) showing toxicity and stereotype drift are decoupled: safety optimization does not guarantee representational fairness improvements.
+\item Robustness evidence confirming all main findings replicate after excluding StereoSet and CrowS-Pairs (8/8 drift pairs consistent).
+\end{itemize}
+
+\section{Related Work}
+
+\subsection{Fairness and Bias in NLP}
+Statistical fairness criteria~\citep{hardt2016equality,barocas2016bigdata} and surveys~\citep{mehrabi2021survey,ferrara2024fairness} establish the foundations, but generative models require different approaches to surface contextual harms~\citep{blodgett2020language,blodgett2021measuring}. Language models encode social biases~\citep{caliskan2017bias}, measured by benchmarks such as StereoSet~\citep{nadeem2021stereoset}, CrowS-Pairs~\citep{nangia2020crows}, BOLD~\citep{dhamala2021bold}, BBQ~\citep{parrish2022bbq}, and HolisticBias~\citep{smith2022holisticbias}. StereoSet and CrowS-Pairs have known annotation artifacts and construct validity problems~\citep{blodgett2021measuring}; we treat them as imperfect proxy instruments and confirm all findings replicate without them (Section~\ref{sec:ablation}). RLHF and instruction tuning improve safety~\citep{ouyang2022rlhf,bai2022constitutional} but fairness remains rarely evaluated multidimensionally~\citep{blodgett2021measuring,mitchell2019modelcards,raji2020accountability}.
+
+\subsection{Longitudinal Analysis}
+Longitudinal fairness studies are scarce despite frequent model updates~\citep{mehrabi2021survey,garg2024identity}. We introduce a unified framework quantifying \emph{fairness drift} across twelve model versions and seven benchmarks.
+
+\section{Datasets and Models}
+
+\subsection{Evaluation Benchmarks}
+We analyze fairness drift across seven benchmarks: BOLD~\citep{dhamala2021bold}, StereoSet~\citep{nadeem2021stereoset}, CrowS-Pairs~\citep{nangia2020crows}, BBQ~\citep{parrish2022bbq}, HolisticBias~\citep{smith2022holisticbias}, WinoBias~\citep{zhao2018winobias}, and RealToxicityPrompts~\citep{gehman2020realtoxicity}. BOLD and RealToxicityPrompts target sentiment and toxicity; StereoSet and CrowS-Pairs measure stereotypical associations; BBQ evaluates contextual reasoning bias; HolisticBias uses diverse demographic prompts; WinoBias targets gender coreference. Together these cover gender, race, ethnicity, religion, nationality, age, disability, and socioeconomic status.
+
+\subsection{Model Selection and Versioning}
+\label{sec:models}
+We evaluate 12 model versions from five providers across six model families under deterministic decoding (temperature=0, seed=42). OpenAI: GPT-4-turbo $\rightarrow$ 4o $\rightarrow$ 4o-mini $\rightarrow$ 4.1 $\rightarrow$ 4.1-mini. Anthropic: Claude Sonnet 4 $\rightarrow$ Sonnet 4.5; Opus 4 is a parallel cross-tier release. Google Gemini: 2.0-Flash $\rightarrow$ 2.5-Flash $\rightarrow$ 2.5-Flash-Lite $\rightarrow$ 2.5-Pro. Meta: LLaMA-3.1 (8B, 70B, 405B) and LLaMA-3.2 (1B, 3B) as separate within-generation families. Google Gemma: 2B/9B. Gemini and Gemma differ in architecture and cadence and are treated as separate families.
+
+Table~\ref{tab:comparison_types} classifies transitions as \emph{release drift} (successive temporal releases), \emph{scale comparisons} (different parameter counts), or \emph{cross-tier} (different capability tier). Only release-drift transitions measure longitudinal fairness evolution; scale and cross-tier comparisons appear in Table~\ref{tab:version_drift} for context but are excluded from aggregates. The OpenAI sequence includes tier changes (e.g., GPT-4o-mini is cost-optimized rather than a strict successor to GPT-4o); we include these by design since practitioners encounter models in API release order regardless of tier.
+
+\begin{table}[t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{p{4.2cm}llc}
+\toprule
+Transitions & Provider & Type & Aggregate? \\
+\midrule
+4-turbo$\!\to\!$4o$\!\to\!$4o-mini$\!\to\!$4.1$\!\to\!$4.1-mini & OpenAI & Release & Yes \\
+Sonnet 4 $\to$ Sonnet 4.5 & Anthropic & Release & Yes \\
+2.0-Flash$\!\to\!$2.5-Flash$\!\to\!$2.5-Flash-Lite$\!\to\!$2.5-Pro & Google & Release & Yes \\
+LLaMA-3.1: 8B$\!\to\!$70B$\!\to\!$405B & Meta & Scale & No \\
+LLaMA-3.2: 1B$\!\to\!$3B & Meta & Scale & No \\
+Gemma-2: 2B$\!\to\!$9B & Google & Scale & No \\
+Claude Opus 4 (parallel) & Anthropic & Cross-tier$^\dagger$ & No \\
+\bottomrule
+\end{tabular}}
+\caption{Transition classification. Release transitions included in longitudinal aggregates; scale and cross-tier ($^\dagger$) excluded.}
+\label{tab:comparison_types}
+\end{table}
+
+\subsection{Preprocessing and Data Coverage}
+The analysis covers roughly 200K prompt-response pairs aggregated via sample-size-weighted means. A unified pipeline standardizes formats, harmonizes demographic labels, removes duplicates, and filters invalid or policy-blocked outputs (filtering rate: 1.34\%, concentrated in CrowS-Pairs and BBQ).
+
+\section{Methodology}
+
+\subsection{Evaluation Framework and Prompt Processing}
+We build a unified pipeline covering data preparation, inference, metric computation, and analysis. All prompts use English, single-turn format under deterministic decoding (temperature = 0), run once per version without best-of-$n$ sampling.
+
+\subsection{Fairness Drift and Metrics}
+Fairness drift is the metric change between successive versions. For model $M_t$ and metric $f(\cdot)$,
+\[D_f(M_t, M_{t+1}) = f(M_{t+1}) - f(M_t),\]
+where positive values indicate a metric increase. Higher sentiment is preferred; lower toxicity and stereotype-proxy scores are preferred. Sentiment uses VADER (compound score rescaled to $[0,1]$); because VADER was designed for short text, we treat sentiment findings with caution and ground conclusions in relative drift rather than absolute scores. Toxicity uses the Perspective API; stereotype uses benchmark-native scores where available, classifier-based otherwise. All classifiers are applied identically across versions.
+
+Stereotype operationalizations differ across benchmarks: StereoSet uses its native score, CrowS-Pairs a preference rate, and the rest classifier-based scores. We retain this heterogeneity deliberately; forcing a single operationalization would discard benchmark-specific signal. The aggregate proxy should be read as a direction-of-drift indicator; per-benchmark breakdowns are in Table~\ref{tab:benchmark_drift}.
+
+\subsection{Statistical Analysis and Reproducibility}
+Version-to-version differences are tested using prompt-level bootstrap resampling (1,000 samples, seed 42)~\citep{efron1994bootstrap}. Bootstrap draws sample with replacement from per-example metric scores of each model independently; drift is estimated as the difference in bootstrap sample means. CIs are at the 95\% level; $p$-values are estimated as the proportion of bootstrap drift samples in the opposite direction (one-sided), doubled for two-sided reporting.
+
+We do not apply multiple-comparison correction across the 39 pre-specified tests ($13\ \text{transitions} \times 3\ \text{metrics}$) by design: the goal is to surface potential regressions for follow-up, not make confirmatory claims. Substantive discussion is restricted to effects satisfying both $p < 0.001$ and Cohen's $|d| \geq 0.4$. The $\sim$200K figure refers to post-filtering pairs across all evaluated model variants and 7 benchmarks. Aggregate longitudinal claims use only release-drift transitions (Table~\ref{tab:comparison_types}).
+
+\section{Results}
+
+\subsection{Aggregate Fairness Trends}
+
+Table~\ref{tab:overall_drift} reports average version-to-version drift. Toxicity shows a small average decrease across model releases, though individual transitions are non-monotonic (Table~\ref{tab:version_drift}); Figure~\ref{fig:aggregate_drift} shows mean absolute drift magnitudes. The aggregate stereotype proxy drift of $+0.010$ has a 95\% CI of $[-0.04, 0.02]$ that includes zero; significant stereotype effects appear at the provider and transition level (Table~\ref{tab:effect_sizes}).
+
+\begin{table}[t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Metric & Mean Drift & Std.\ Dev. & 95\% CI \\
+\midrule
+Sentiment        & $+$0.020 & 0.010 & $[0.00,\ 0.04]$ \\
+Toxicity         & $-$0.005 & 0.003 & $[-0.008,\ 0.002]$ \\
+Stereotype Proxy & $+$0.010 & 0.020 & $[-0.04,\ 0.02]$ \\
+\bottomrule
+\end{tabular}}
+\caption{Aggregate fairness drift. Lower toxicity and stereotype scores are preferred. Toxicity and stereotype CIs span zero.}
+\label{tab:overall_drift}
+\end{table}
+
+\begin{figure}[!tp]
+\centering
+\includegraphics[width=\linewidth]{../images/fig1_aggregate_drift.pdf}
+\caption{Mean absolute drift with 95\% bootstrap CIs (cf.\ signed drift in Table~\ref{tab:overall_drift}).}
+\label{fig:aggregate_drift}
+\end{figure}
+
+\subsection{Provider-Level Comparison}
+
+Table~\ref{tab:provider_scores} reports mean metric values; Figure~\ref{fig:provider_profile} visualizes the profiles. OpenAI and Gemma have stronger sentiment and lower stereotype proxy scores. Values are descriptive only; we do not test inter-provider differences.
+
+\begin{table}[t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Provider & Sentiment ($\uparrow$) & Toxicity ($\downarrow$) & Stereotype ($\downarrow$) \\
+\midrule
+OpenAI         & $0.79 \pm 0.10$ & $0.01 \pm 0.02$ & $0.18 \pm 0.12$ \\
+Anthropic      & $0.76 \pm 0.12$ & $0.01 \pm 0.02$ & $0.25 \pm 0.13$ \\
+Google (Gemini)& $0.72 \pm 0.14$ & $0.03 \pm 0.05$ & $0.32 \pm 0.15$ \\
+Meta (LLaMA)   & $0.74 \pm 0.11$ & $0.01 \pm 0.02$ & $0.20 \pm 0.11$ \\
+Google (Gemma) & $0.78 \pm 0.10$ & $0.02 \pm 0.03$ & $0.22 \pm 0.12$ \\
+\bottomrule
+\end{tabular}}
+\caption{Provider-level mean fairness scores (mean $\pm$ std). Arrows indicate preferred direction.}
+\label{tab:provider_scores}
+\end{table}
+
+\begin{figure}[!tp]
+\centering
+\includegraphics[width=\linewidth]{../images/fig2_provider_profile.pdf}
+\caption{Provider-level fairness profile across sentiment, toxicity, and stereotype proxy metrics.}
+\label{fig:provider_profile}
+\end{figure}
+
+\subsection{Version-Level Fairness Drift}
+
+Figures~\ref{fig:version_sentiment}--\ref{fig:version_stereotype} show metric trajectories. OpenAI is stable on stereotypes with modest sentiment gains. Gemini shows toxicity declines alongside rising stereotype scores, suggesting safety improvements do not translate into representational fairness. Transitions are often non-monotonic.
+
+\begin{figure*}[!tp]
+\centering
+\includegraphics[width=\linewidth]{../images/fig3_sentiment_trajectory.pdf}
+\caption{Sentiment trajectories per provider family with 95\% bootstrap bands. OpenAI and Gemma trend upward; Claude and LLaMA-3.2 show a notable drop in at least one transition.}
+\label{fig:version_sentiment}
+\end{figure*}
+
+\begin{figure*}[!tp]
+\centering
+\includegraphics[width=\linewidth]{../images/fig4_toxicity_trajectory.pdf}
+\caption{Toxicity trajectories per provider family. Gemini shows the most consistent downward trend; most families remain near zero.}
+\label{fig:version_toxicity}
+\end{figure*}
+
+\begin{figure*}[!tp]
+\centering
+\includegraphics[width=\linewidth]{../images/fig6_stereotype_trajectory.pdf}
+\caption{Stereotype proxy trajectories. Gemini-2.5-Pro shows the sharpest increase ($\Delta = +0.027$, $d = 0.64$, $p < 0.001$). Rising stereotype co-occurs with falling toxicity in Gemini, illustrating the decoupling.}
+\label{fig:version_stereotype}
+\end{figure*}
+
+\begin{table}[t]
+\centering\small
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Transition} & $\Delta$Sent. & $\Delta$Tox. & $\Delta$Ster. \\
+\midrule
+\multicolumn{4}{l}{\textbf{OpenAI}} \\
+GPT-4-turbo $\rightarrow$ 4o & +0.005 & -0.002 & -0.008 \\
+4o $\rightarrow$ 4o-mini & +0.029 & +0.001 & -0.005 \\
+4o-mini $\rightarrow$ 4.1 & -0.038 & +0.001 & +0.016 \\
+4.1 $\rightarrow$ 4.1-mini & +0.021 & -0.003 & -0.021 \\
+\multicolumn{4}{l}{\textbf{Gemini}} \\
+2.0-Flash $\rightarrow$ 2.5-Flash & +0.029 & -0.003 & +0.015 \\
+2.5-Flash $\rightarrow$ 2.5-Flash-Lite & +0.039 & +0.001 & -0.003 \\
+2.5-Flash-Lite $\rightarrow$ 2.5-Pro & -0.001 & +0.002 & $+$0.027$^*$ \\
+\multicolumn{4}{l}{\textbf{Claude}$^\dagger$} \\
+Sonnet $\rightarrow$ Opus$^\dagger$ & -0.023 & -0.003 & -0.008 \\
+Opus$^\dagger$ $\rightarrow$ Sonnet-4.5 & -0.051 & +0.002 & +0.021 \\
+\multicolumn{4}{l}{\textbf{LLaMA (scale)}} \\
+3.1-8B $\rightarrow$ 70B & +0.025 & +0.0003 & +0.0003 \\
+3.1-70B $\rightarrow$ 405B & +0.043 & +0.0011 & -0.001 \\
+3.2-1B $\rightarrow$ 3B & -0.046 & -0.001 & -0.003 \\
+\multicolumn{4}{l}{\textbf{Gemma (scale)}} \\
+2-2B $\rightarrow$ 2-9B & -0.030 & -0.002 & -0.007 \\
+\bottomrule
+\end{tabular}}
+\caption{Version-to-version fairness drift. Lower toxicity and stereotype scores are better. LLaMA and Gemma are scale comparisons. $^*p < 0.001$; $d$ in Table~\ref{tab:effect_sizes}. $^\dagger$Cross-tier; excluded from longitudinal aggregates. CIs in supplementary material.}
+\label{tab:version_drift}
+\end{table}
+
+\subsection{Benchmark-Specific Fairness Drift}
+
+Table~\ref{tab:benchmark_drift} reports maximum absolute drift; Figure~\ref{fig:benchmark_sensitivity} shows inter-model variability per benchmark. Minimal-pair benchmarks (CrowS-Pairs, HolisticBias) show both high variability and the largest sentiment and stereotype fluctuations.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Benchmark & $|\Delta$Sent.$|$ & $|\Delta$Tox.$|$ & $|\Delta$Ster.$|$ \\
+\midrule
+HolisticBias        & 0.096 & 0.013 & 0.052 \\
+StereoSet           & 0.074 & 0.006 & 0.046 \\
+CrowS-Pairs         & 0.224 & 0.019 & 0.034 \\
+WinoBias            & 0.047 & 0.002 & 0.040 \\
+RealToxicityPrompts & 0.143 & 0.010 & 0.046 \\
+BBQ                 & 0.091 & 0.001 & 0.038 \\
+BOLD                & 0.004 & 0.001 & 0.010 \\
+\bottomrule
+\end{tabular}
+\caption{Maximum absolute fairness drift per benchmark.}
+\label{tab:benchmark_drift}
+\end{table}
+
+\subsection{Correlation Between Fairness Dimensions}
+
+Table~\ref{tab:correlations} reports pairwise correlations at the model--benchmark level; Figure~\ref{fig:correlations} visualizes them at the per-example level. Both levels confirm weak correlations ($|r| < 0.2$), meaning the three dimensions are largely non-redundant (see Section~\ref{sec:discussion:multidim}).
+
+\begin{table}[t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Metric     & Sentiment & Toxicity & Stereotype \\
+\midrule
+Sentiment  & $1.00$ & $-0.18$ & $\phantom{-}0.08$ \\
+Toxicity   & $-0.18$ & $1.00$ & $\phantom{-}0.12$ \\
+Stereotype & $\phantom{-}0.08$ & $\phantom{-}0.12$ & $1.00$ \\
+\bottomrule
+\end{tabular}}
+\caption{Pearson correlation matrix at the model--benchmark level. All $|r| < 0.2$.}
+\label{tab:correlations}
+\end{table}
+
+\subsection{Robustness Ablation: Excluding StereoSet and CrowS-Pairs}
+\label{sec:ablation}
+
+StereoSet and CrowS-Pairs have well-documented construct validity problems~\citep{blodgett2021measuring}. We re-ran the full drift analysis excluding both, retaining BBQ, BOLD, HolisticBias, RealToxicityPrompts, and WinoBias (5,439 cached prompt-response pairs covering all 8 release-drift transitions: BBQ 1,830; HolisticBias 1,981; BOLD 643; RealToxicityPrompts 546; WinoBias 439).
+
+All eight drift pairs showed consistent sign and magnitude (8/8, 100\% agreement). Toxicity decline strengthens after exclusion (50\% $\rightarrow$ 62\% of transitions), suggesting StereoSet and CrowS-Pairs inflate measured toxicity via adversarial prompt construction. Stereotype stability holds or strengthens (67\% $\rightarrow$ 75\%). Table~\ref{tab:ablation} and Figure~\ref{fig:ablation} summarize the comparison.
+
+\begin{table}[t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Finding & Full (7) & Ablation (5) & Consistent? \\
+\midrule
+Toxicity declines       & 50\% & 62\% & Yes, strengthens \\
+Stereotype stable/rises & 67\% & 75\% & Yes, strengthens \\
+Correlations weak       & $|r|<0.2$ & $|r|<0.2$ & Yes, holds \\
+Drift sign consistent   & --- & 8/8 pairs & Yes \\
+\bottomrule
+\end{tabular}}
+\caption{Ablation results: full 7-benchmark set vs.\ 5-benchmark subset. All findings replicate.}
+\label{tab:ablation}
+\end{table}
+
+\subsection{Version-to-Version Effect Sizes}
+
+\begin{table}[!t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+Metric / Transition & Cohen's $d$ & $p$ & Magnitude \\
+\midrule
+OpenAI Sentiment    & 0.41 & $0.001$  & Small--Moderate \\
+Gemini Stereotype   & 0.64 & $<0.001$ & Medium \\
+Toxicity (all)      & 0.61 & $<0.001$ & Medium--Large \\
+\bottomrule
+\end{tabular}}
+\caption{Effect sizes for the three largest drift signals. Cohen's $d$ computed over per-example metric differences.}\label{tab:effect_sizes}
+\end{table}
+
+The largest standardized toxicity effect reaches Cohen's $d = 0.61$ ($p < 0.001$, Medium--Large). The stereotype increase in Gemini-2.5-Pro is the most substantial negative drift ($d = 0.64$, $p < 0.001$, Medium). OpenAI sentiment drift is Small--Moderate ($d = 0.41$, $p = 0.001$). These effect sizes should not be conflated with the aggregate CI results in Table~\ref{tab:overall_drift}, where both CIs span zero.
+
+\begin{figure*}[p]
+\centering
+\includegraphics[width=\linewidth,height=0.27\textheight,keepaspectratio]{../images/fig5_benchmark_sensitivity.pdf}
+\caption{Inter-model variability per benchmark (std dev of per-model means). Benchmarks with high variability (CrowS-Pairs, HolisticBias) also show the largest drift magnitudes in Table~\ref{tab:benchmark_drift}.}
+\label{fig:benchmark_sensitivity}
+
+\vspace{1.2em}
+
+\includegraphics[width=\linewidth,height=0.27\textheight,keepaspectratio]{../images/fig8_metric_correlations.pdf}
+\caption{Per-example pairwise metric scatter plots. Correlations (sentiment--toxicity $r=-0.13$, sentiment--stereotype $r=0.02$, toxicity--stereotype $r=0.07$) differ from model--benchmark-level values in Table~\ref{tab:correlations} but both confirm weak inter-metric dependence.}
+\label{fig:correlations}
+
+\vspace{1.2em}
+
+\includegraphics[width=\linewidth,height=0.27\textheight,keepaspectratio]{../images/fig7_ablation_comparison.pdf}
+\caption{Provider-level drift magnitudes: full set (blue) vs.\ ablation (orange). Consistent across all 8 release-drift transition pairs (100\% agreement).}
+\label{fig:ablation}
+\end{figure*}
+
+\section{Discussion}
+
+\subsection{Fairness Is Multidimensional}
+\label{sec:discussion:multidim}
+
+Weak correlations ($|r| < 0.2$) confirm sentiment, toxicity, and stereotype capture distinct behavioral properties~\citep{blodgett2021measuring,mehrabi2021survey}. Optimizing a single fairness objective is insufficient. Both the model--benchmark-level values in Table~\ref{tab:correlations} and the per-example values in Figure~\ref{fig:correlations} pool across providers and benchmarks, so weak $|r|$ values partly reflect between-model variance; within-model correlation analysis remains a direction for future work.
+
+\subsection{Longitudinal Fairness Drift and Post-Training Tradeoffs}
+
+Despite rapid model iteration cycles, longitudinal fairness analyses remain limited~\citep{mehrabi2021survey,garg2024identity}. Our results show alignment updates often reduce overt toxicity while leaving stereotype-related measures unchanged or elevated.
+
+This decoupling is consistent with known post-training limitations: RLHF reward models are trained to penalize clearly detectable harms~\citep{ouyang2022rlhf,bai2022constitutional}, while representational biases such as stereotyping are subtler. If reward models are not calibrated on stereotype-related harms, RLHF naturally reduces toxicity while leaving or worsening stereotype scores. The ablation (Section~\ref{sec:ablation}) confirms this reflects model behavior rather than benchmark noise. The Gemini-2.5-Pro finding is consistent with the hypothesis that safety constraints shift output distributions toward more stereotypical associations, a tradeoff invisible to capability-only evaluations.
+
+\subsection{Provider and Task Sensitivity}
+
+No provider consistently outperforms others across all dimensions. Benchmark sensitivity plays a large role: minimal-pair datasets show considerably larger drift magnitudes than open-ended generation benchmarks like BOLD, meaning observed fairness trends depend on evaluation design as much as model behavior.
+
+\subsection{Practical Implications}
+
+Four recommendations follow. First, fairness drift should be reported alongside capability benchmarks at each model release. Second, toxicity, sentiment, and stereotype metrics must be tracked independently given near-zero inter-metric correlations. Third, results should be reported at the benchmark and demographic-slice level. Fourth, high-risk regressions flagged by automated metrics should trigger targeted human review --- the 1.34\% filtering rate concentrated in CrowS-Pairs and BBQ suggests the most sensitive benchmarks are precisely where automated evaluation is least reliable.
+
+\section{Conclusion}
+
+We introduce a release-level fairness regression audit framework analyzing fairness evolution across five providers (six model families) and twelve model versions. Toxicity shows a small average decline across newer releases, though individual transitions are non-monotonic. Stereotype scores hold steady or increase in most transitions, revealing a tradeoff between overt harm mitigation and representational fairness. A robustness ablation confirms conclusions hold after excluding the two most criticized benchmarks (8/8 drift pairs consistent). Weak inter-metric correlations ($|r| < 0.2$) confirm fairness is multidimensional. Continuous, multi-dimensional fairness monitoring is practical infrastructure for deployed LLM systems.
+
+\section*{Limitations}
+
+Evaluation is English-only; multilingual extension requires benchmark parity that does not yet exist at scale. Public datasets are curated subsets. Proprietary API access precludes examination of training procedures, so causal attribution is not possible. Automated classifiers miss context-dependent harms; single-turn prompts are standard practice but multi-turn dynamics are not captured.
+
+No multiple-comparison correction was applied across the 39 tests, reflecting an audit-oriented rather than confirmatory goal; transition-level findings are signals for follow-up. The dual threshold ($p < 0.001$, $|d| \geq 0.4$) reduces but does not eliminate family-wise error risk. All experiments used fixed API version identifiers; replication should pin to those rather than current API defaults.
+
+\section*{Ethical Considerations}
+
+This study uses publicly available benchmarks and model-generated outputs; no personal data were collected. Automated bias metrics are partial representations of social harms; findings are benchmark-based indicators, not comprehensive societal assessments. Claude was used for limited writing assistance. All research design, analysis, and interpretation were conducted by the authors.
+
+\clearpage
+\bibliography{custom}
+
+\appendix
+
+\section{Metric Specifications and Demographic Taxonomy}
+\label{sec:appendix}
+
+\paragraph{Scoring.} Sentiment: VADER compound score rescaled to $[0,1]$. Toxicity: Perspective API. Stereotype: benchmark-native where available (StereoSet SS score, CrowS-Pairs preference rate), classifier-based otherwise. All classifiers applied identically. Responses filtered for error prefixes, policy blocks, empty strings, and refusal patterns (filtering rate: 1.34\%, concentrated in CrowS-Pairs and BBQ).
+
+\paragraph{Demographic Taxonomy.}
+Sensitive attributes were harmonized to seven axes: \textbf{gender}, \textbf{race/ethnicity}, \textbf{religion}, \textbf{age}, \textbf{disability status}, \textbf{nationality/origin}, and \textbf{socioeconomic status}. Labels were mapped by keyword matching with manual review of the 50 most frequent labels per benchmark (Table~\ref{tab:demo_taxonomy}). Intersectional groups are retained under the most specific axis ($\sim$8\% of examples); unmatched labels go to \texttt{other} ($<$3\%) and are excluded from axis-level analyses. The full 217-label mapping is in the supplementary data release.
+
+\begin{table}[t]
+\centering\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lll}
+\toprule
+Axis & Example native labels & Source benchmarks \\
+\midrule
+Gender         & \texttt{female}, \texttt{gender\_identity}, \texttt{transgender} & BOLD, HolisticBias, WinoBias \\
+Race/Ethnicity & \texttt{race}, \texttt{Black}, \texttt{Hispanic}, \texttt{Asian}  & BOLD, StereoSet, CrowS-Pairs \\
+Religion       & \texttt{Muslim}, \texttt{Jewish}, \texttt{Hindu}, \texttt{Christian} & StereoSet, CrowS-Pairs, BBQ \\
+Age            & \texttt{elderly}, \texttt{age}, \texttt{young\_adults}            & HolisticBias, BBQ \\
+Disability     & \texttt{disability\_status}, \texttt{mental\_disability}          & HolisticBias, BBQ \\
+Nationality    & \texttt{nationality}, \texttt{country\_of\_origin}               & HolisticBias, BBQ \\
+Socioeconomic  & \texttt{ses}, \texttt{race\_x\_ses}, \texttt{low-income}          & HolisticBias, BOLD \\
+\bottomrule
+\end{tabular}}
+\caption{Demographic taxonomy with representative label mappings.}
+\label{tab:demo_taxonomy}
+\end{table}
+
+\end{document}

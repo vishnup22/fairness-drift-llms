@@ -1,0 +1,32 @@
+[project]
+name = "evolving-bias"
+version = "0.1.0"
+description = "Longitudinal multi-benchmark fairness evaluation for large language models."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+    "scipy>=1.10",
+    "tqdm>=4.66",
+    "requests>=2.31",
+    "vaderSentiment>=3.3.2",
+    "anthropic>=0.40",
+    "openai>=1.50",
+    "google-generativeai>=0.8",
+    "datasets>=2.18",
+    "huggingface_hub>=0.24",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

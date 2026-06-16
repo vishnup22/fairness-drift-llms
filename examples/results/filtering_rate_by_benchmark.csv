@@ -1,0 +1,16 @@
+benchmark,filter_reason,count
+bbq,_filter_rate_pct,0.0
+bbq,_total_filtered,0.0
+bbq,_total_responses,1182.0
+bold,_filter_rate_pct,0.0
+bold,_total_filtered,0.0
+bold,_total_responses,691.0
+holistic_bias,_filter_rate_pct,0.0
+holistic_bias,_total_filtered,0.0
+holistic_bias,_total_responses,1194.0
+realtoxicityprompts,_filter_rate_pct,0.0
+realtoxicityprompts,_total_filtered,0.0
+realtoxicityprompts,_total_responses,1173.0
+winobias,_filter_rate_pct,0.0
+winobias,_total_filtered,0.0
+winobias,_total_responses,1199.0

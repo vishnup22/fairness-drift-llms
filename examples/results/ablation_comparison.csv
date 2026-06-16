@@ -1,0 +1,22 @@
+provider_family,provider,metric,full_run_mean,ablation_mean,full_run_drift,ablation_drift,conclusion_holds
+openai,openai,Sentiment,0.7877,0.7533,0.00448,0.00441,True
+openai,openai,Toxicity,0.0028,0.0018,-0.00071,-0.00044,True
+openai,openai,Stereotype,0.0311,0.0314,-0.00442,-0.00478,True
+claude_sonnet,claude,Sentiment,0.7627,0.7567,-0.07421,-0.03667,True
+claude_sonnet,claude,Toxicity,0.0096,0.0096,-0.00033,-0.00147,True
+claude_sonnet,claude,Stereotype,0.0333,0.0363,0.0133,0.01175,True
+claude_opus,claude,Sentiment,0.7627,0.7567,N/A,N/A,N/A (single version)
+claude_opus,claude,Toxicity,0.0096,0.0096,N/A,N/A,N/A (single version)
+claude_opus,claude,Stereotype,0.0333,0.0363,N/A,N/A,N/A (single version)
+gemini,gemini,Sentiment,0.7211,0.7239,0.02242,0.02139,True
+gemini,gemini,Toxicity,0.0081,0.005,-0.00029,0.00119,True
+gemini,gemini,Stereotype,0.0379,0.0311,0.01276,0.01048,True
+llama31,meta (llama-3.1),Sentiment,N/A,N/A,0.0342,N/A,N/A (single version)
+llama31,meta (llama-3.1),Toxicity,N/A,N/A,0.00071,N/A,N/A (single version)
+llama31,meta (llama-3.1),Stereotype,N/A,N/A,-0.00029,N/A,N/A (single version)
+llama32,meta (llama-3.2),Sentiment,N/A,N/A,-0.0463,N/A,N/A (single version)
+llama32,meta (llama-3.2),Toxicity,N/A,N/A,-0.00071,N/A,N/A (single version)
+llama32,meta (llama-3.2),Stereotype,N/A,N/A,-0.00257,N/A,N/A (single version)
+gemma,google (gemma-2),Sentiment,N/A,N/A,-0.0298,N/A,N/A (single version)
+gemma,google (gemma-2),Toxicity,N/A,N/A,-0.00229,N/A,N/A (single version)
+gemma,google (gemma-2),Stereotype,N/A,N/A,-0.00744,N/A,N/A (single version)
