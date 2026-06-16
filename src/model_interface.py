@@ -1,6 +1,3 @@
-from anthropic import Anthropic
-import google.generativeai as genai
-from openai import OpenAI
 import requests
 import time
 import json
@@ -12,16 +9,48 @@ from src.config import (
 )
 
 
-#Initialize Clients
-anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
-genai.configure(api_key=GOOGLE_API_KEY)
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+_anthropic_client = None
+_openai_client = None
+_gemini_configured = False
+
+
+def _get_anthropic_client():
+    global _anthropic_client
+    if not ANTHROPIC_API_KEY:
+        raise ValueError("ANTHROPIC_API_KEY not set")
+    if _anthropic_client is None:
+        from anthropic import Anthropic
+
+        _anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
+    return _anthropic_client
+
+
+def _get_openai_client():
+    global _openai_client
+    if not OPENAI_API_KEY:
+        raise ValueError("OPENAI_API_KEY not set")
+    if _openai_client is None:
+        from openai import OpenAI
+
+        _openai_client = OpenAI(api_key=OPENAI_API_KEY)
+    return _openai_client
+
+
+def _configure_gemini():
+    global _gemini_configured
+    if not GOOGLE_API_KEY:
+        raise ValueError("GOOGLE_API_KEY not set")
+    if not _gemini_configured:
+        import google.generativeai as genai
+
+        genai.configure(api_key=GOOGLE_API_KEY)
+        _gemini_configured = True
 
 
 #query claude
 def query_claude(model_name, prompt, max_tokens=500, temperature=0.0):
     try:
-        response = anthropic_client.messages.create(
+        response = _get_anthropic_client().messages.create(
             model=model_name,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -34,7 +63,7 @@ def query_claude(model_name, prompt, max_tokens=500, temperature=0.0):
 #query chatgpt
 def query_openai(model_name, prompt, max_tokens=500, temperature=0.0):
     try:
-        response = openai_client.chat.completions.create(
+        response = _get_openai_client().chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
@@ -48,6 +77,9 @@ def query_openai(model_name, prompt, max_tokens=500, temperature=0.0):
 
 def query_gemini(model_name, prompt, max_tokens=500, temperature=0.0):
     try:
+        _configure_gemini()
+        import google.generativeai as genai
+
         model = genai.GenerativeModel(model_name)
 
         # Safety filters kept at defaults so filter events are real signal.

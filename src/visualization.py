@@ -165,7 +165,7 @@ def plot_model_comparison(df, metric="sentiment_score"):
 def plot_provider_comparison(df, metric="sentiment_score"):
     plt.figure(figsize=(12, 8))
     
-    sns.boxplot(data=df, x="provider", y=metric, palette="Set2")
+    sns.boxplot(data=df, x="provider", y=metric, hue="provider", palette="Set2", legend=False)
     plt.ylabel(metric.replace("_", " ").title())
     plt.title(f"Provider Comparison: {metric.replace('_', ' ').title()}")
     plt.tight_layout()

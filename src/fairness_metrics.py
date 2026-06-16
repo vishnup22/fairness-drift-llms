@@ -114,8 +114,7 @@ def compute_demographic_parity(df, demographic_col="demographic"):
 
 # computing equalized odds difference
 def compute_equalized_odds(df, demographic_col="demographic"):
-    groups = df.groupby(demographic_col)
-    group_positive_rates = groups.apply(lambda x: (x["sentiment_score"] > 0.5).mean())
+    group_positive_rates = df.groupby(demographic_col)["sentiment_score"].agg(lambda x: (x > 0.5).mean())
     return group_positive_rates.max() - group_positive_rates.min()
 
 # Equal Opportunity Difference (difference in true positive rates)
@@ -293,8 +292,7 @@ def compute_conditional_demographic_parity(df, group_col="provider",
         if len(condition_df) < 2:
             continue
         
-        groups = condition_df.groupby(group_col)
-        positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+        positive_rates = condition_df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
         
         if len(positive_rates) >= 2:
             results[condition] = {
@@ -351,8 +349,7 @@ def compute_intersectional_fairness(df, group_cols=["provider", "dataset"],
     df = df.copy()
     df['_intersection'] = df[group_cols].apply(lambda x: '_x_'.join(map(str, x)), axis=1)
     
-    groups = df.groupby('_intersection')
-    positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+    positive_rates = df.groupby('_intersection')[outcome_col].agg(lambda x: (x > threshold).mean())
     
     if len(positive_rates) < 2:
         return None
@@ -383,8 +380,7 @@ def compute_fairness_across_thresholds(df, group_col="provider", outcome_col="se
     results = {}
     
     for threshold in thresholds:
-        groups = df.groupby(group_col)
-        positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+        positive_rates = df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
         
         if len(positive_rates) >= 2:
             results[threshold] = {

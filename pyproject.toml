@@ -30,3 +30,7 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+filterwarnings = [
+    "ignore:codecs.open\\(\\) is deprecated.*:DeprecationWarning:vaderSentiment.*",
+    "ignore:urllib3.*doesn't match.*:requests.exceptions.RequestsDependencyWarning",
+]

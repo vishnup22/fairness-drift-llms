@@ -37,7 +37,7 @@ mpl.rcParams.update({
     "grid.linestyle":   "--",
 })
 
-PLOTS_DIR = "plots"
+PLOTS_DIR = "examples/plots"
 
 # VERSION_ORDERING from config.py — defines chronological order within families
 VERSION_ORDERING = {

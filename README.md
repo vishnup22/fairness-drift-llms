@@ -184,7 +184,28 @@ Validate repository structure and imports:
 
 ```bash
 python scripts/validate_repo.py
-pytest
+python -m pytest
+```
+
+## Reproducing Paper Artifacts
+
+Regenerate full results from the committed scored cache without API calls:
+
+```bash
+python main.py --reuse-results
+```
+
+Regenerate the robustness ablation:
+
+```bash
+python main.py --reuse-results --exclude-datasets=stereoset,crows_pairs
+python scripts/ablation_analysis.py
+```
+
+Regenerate paper-style figures:
+
+```bash
+python scripts/make_paper_plots.py
 ```
 
 ## Pipeline
@@ -225,6 +246,18 @@ Runtime artifacts are written to `outputs/`:
 
 Paper figures and archived result tables live under `examples/`.
 
+Expected table outputs after `python main.py --reuse-results`:
+
+- `outputs/tables/summary_statistics.csv`
+- `outputs/tables/model_version_summary.csv`
+- `outputs/tables/model_version_detailed_metrics.csv`
+- `outputs/tables/dataset_model_metric_drift.csv`
+- `outputs/tables/drift_by_benchmark.csv`
+- `outputs/tables/advanced_fairness_metrics.csv`
+- `outputs/tables/filtering_rate_by_model.csv`
+- `outputs/tables/filtering_rate_by_benchmark.csv`
+- `outputs/tables/pairwise_statistical_tests.csv`
+
 ## Reproducibility
 
 Important defaults:
@@ -238,3 +271,7 @@ Important defaults:
 ## Limitations
 
 The paper is English-only, uses public benchmark datasets, and relies on automated scoring proxies. Proprietary APIs prevent causal claims about training or post-training changes. Single-turn prompts do not capture multi-turn behavior. Transition-level statistical findings are audit signals for follow-up, not final causal explanations.
+
+## License
+
+Code is released under the MIT License. Dataset and model outputs may be subject to their original benchmark/provider terms.

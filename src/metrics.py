@@ -20,16 +20,18 @@ except ImportError:
 
 from src.fairness_metrics import compute_perspective_toxicity  # canonical version with timeout=10
 
+
+def _positive_rates(df, group_col, predicate):
+    return df.assign(_positive=df.apply(predicate, axis=1)).groupby(group_col)["_positive"].mean()
+
+
 # bias metrics
 def compute_demographic_parity_difference(df, group_col, outcome_col="sentiment_score", 
                                          threshold=0.5, positive_outcome_definition=None):
-   
-    groups = df.groupby(group_col)
-    
     # Define positive outcome
     if positive_outcome_definition is None:
         # Default: outcome > threshold
-        positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+        positive_rates = df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
     elif isinstance(positive_outcome_definition, str):
         # String-based definition (e.g., "toxicity_score < 0.3")
         # This is a simplified parser - in practice you might want more robust parsing
@@ -38,19 +40,19 @@ def compute_demographic_parity_difference(df, group_col, outcome_col="sentiment_
             parts = positive_outcome_definition.split("<")
             col = parts[0].strip()
             val = float(parts[1].strip())
-            positive_rates = groups.apply(lambda x: (x[col] < val).mean())
+            positive_rates = df.groupby(group_col)[col].agg(lambda x: (x < val).mean())
         elif ">" in positive_outcome_definition:
             # Parse "sentiment_score > 0.5"
             parts = positive_outcome_definition.split(">")
             col = parts[0].strip()
             val = float(parts[1].strip())
-            positive_rates = groups.apply(lambda x: (x[col] > val).mean())
+            positive_rates = df.groupby(group_col)[col].agg(lambda x: (x > val).mean())
         else:
             # Fallback to threshold
-            positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+            positive_rates = df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
     else:
         # Custom function
-        positive_rates = groups.apply(lambda x: x.apply(positive_outcome_definition, axis=1).mean())
+        positive_rates = _positive_rates(df, group_col, positive_outcome_definition)
     
     if len(positive_rates) < 2:
         return None
@@ -60,7 +62,8 @@ def compute_demographic_parity_difference(df, group_col, outcome_col="sentiment_
 def compute_equalized_odds_difference(df, group_col, outcome_col="sentiment_score",
                                      true_label_col=None, threshold=0.5,
                                      positive_outcome_definition=None,
-                                     use_pseudo_labels=False):
+                                     use_pseudo_labels=False,
+                                     warn_on_fallback=True):
     """Compute equalized odds difference across groups.
 
     When true_label_col is provided (or use_pseudo_labels=True), computes full
@@ -73,16 +76,16 @@ def compute_equalized_odds_difference(df, group_col, outcome_col="sentiment_scor
     """
     if true_label_col is None:
         if not use_pseudo_labels:
-            warnings.warn(
-                "compute_equalized_odds_difference: no true_label_col provided and "
-                "use_pseudo_labels=False. Falling back to demographic parity "
-                "(positive-rate difference). Set use_pseudo_labels=True or supply "
-                "true_label_col to compute actual equalized odds.",
-                UserWarning,
-                stacklevel=2,
-            )
-            groups = df.groupby(group_col)
-            tpr = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+            if warn_on_fallback:
+                warnings.warn(
+                    "compute_equalized_odds_difference: no true_label_col provided and "
+                    "use_pseudo_labels=False. Falling back to demographic parity "
+                    "(positive-rate difference). Set use_pseudo_labels=True or supply "
+                    "true_label_col to compute actual equalized odds.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            tpr = df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
             if len(tpr) < 2:
                 return None
             return tpr.max() - tpr.min()
@@ -119,26 +122,24 @@ def compute_disparate_impact_ratio(df, group_col, outcome_col="sentiment_score",
                                    protected_group=None, threshold=0.5,
                                    positive_outcome_definition=None):
     
-    groups = df.groupby(group_col)
-    
     # Define positive outcome (same logic as demographic_parity_difference)
     if positive_outcome_definition is None:
-        positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+        positive_rates = df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
     elif isinstance(positive_outcome_definition, str):
         if "<" in positive_outcome_definition:
             parts = positive_outcome_definition.split("<")
             col = parts[0].strip()
             val = float(parts[1].strip())
-            positive_rates = groups.apply(lambda x: (x[col] < val).mean())
+            positive_rates = df.groupby(group_col)[col].agg(lambda x: (x < val).mean())
         elif ">" in positive_outcome_definition:
             parts = positive_outcome_definition.split(">")
             col = parts[0].strip()
             val = float(parts[1].strip())
-            positive_rates = groups.apply(lambda x: (x[col] > val).mean())
+            positive_rates = df.groupby(group_col)[col].agg(lambda x: (x > val).mean())
         else:
-            positive_rates = groups.apply(lambda x: (x[outcome_col] > threshold).mean())
+            positive_rates = df.groupby(group_col)[outcome_col].agg(lambda x: (x > threshold).mean())
     else:
-        positive_rates = groups.apply(lambda x: x.apply(positive_outcome_definition, axis=1).mean())
+        positive_rates = _positive_rates(df, group_col, positive_outcome_definition)
     
     if len(positive_rates) < 2:
         return None
@@ -644,7 +645,7 @@ def compute_comprehensive_fairness_metrics(df, group_col="provider",
     )
     
     metrics['equalized_odds_difference'] = compute_equalized_odds_difference(
-        df, group_col, outcome_col
+        df, group_col, outcome_col, warn_on_fallback=False
     )
     
     metrics['disparate_impact_ratio'] = compute_disparate_impact_ratio(

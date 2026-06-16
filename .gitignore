@@ -26,6 +26,15 @@ outputs/tables/*
 !outputs/plots/.gitkeep
 !outputs/tables/.gitkeep
 
+# LaTeX build outputs
+*.aux
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
 # OS
 .DS_Store
 Thumbs.db
